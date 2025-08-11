@@ -61,6 +61,8 @@ const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setTopError('')
+    setFormErrors({})
     try {
       if (isEdit && id) {
         // en edición, password vacía no se envía
@@ -101,6 +103,9 @@ const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
               required
               className="w-full border px-2 py-1 rounded"
             />
+                {formErrors.username?.map((m, i) => (
+            <p key={i} className="text-xs text-red-600 mt-1">{m}</p>
+          ))}
           </div>
 
           <div>
@@ -113,6 +118,9 @@ const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
               className="w-full border px-2 py-1 rounded"
               required={!isEdit}
             />
+                {formErrors.password?.map((m, i) => (
+            <p key={i} className="text-xs text-red-600 mt-1">{m}</p>
+          ))}
           </div>
           <div>
             <label >Ingrese la contraseña nuevamente</label>
