@@ -1,23 +1,19 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-interface WelcomeProps {
-  name: string;
-}
-
-const Welcome: React.FC<WelcomeProps> = ({ name }) => {
+const Welcome: React.FC = () => {
   return (
-    <div className="bg-red-900 ">
-      <h1 className="bg-red-400">bienenido</h1>
+    <div className="bg-red-900 p-4">
+      <h1 className="bg-red-400 p-2 text-lg font-bold">Bienvenido</h1>
       <p>Nos alegra tenerte aquí. Disfruta tu experiencia.</p>
       <Link
         to="/login"
-        className=" bg-blue-500 rounded hover:bg-red-600"
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-red-600 inline-block mt-4 text-xl"
       >
-        Ir al Login paarque se mas grande
+        Ir al Login
       </Link>
-      <h1 className='bg-red-200'>
-        toth hb
+      <h1 className='bg-red-200 mt-4 p-2'>
+        Otro texto aquí
       </h1>
     </div>
   );
