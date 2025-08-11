@@ -13,7 +13,7 @@ class AppErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: unknown, info: React.ErrorInfo) {
     // En producción manda a Sentry/Datadog; en dev puedes hacer console.error
-    // console.error(error, info)
+     console.error(error, info)
   }
 
   render() {
