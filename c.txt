@@ -35,3 +35,7 @@ npm install react-icons
 
 
 > npm run dev
+git init
+git add .
+git commit -m "Primer commit"
+git push -u origin main

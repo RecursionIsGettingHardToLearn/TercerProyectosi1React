@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { fetchUsuario, createUsuario, updateUsuario, fetchRoles } from '../../../api/api'
 import type { CustomUser, Rol } from '../../../types'
-
+import { toUiError } from '../../../api/error'
 interface UserFormDto {
   username: string
   password: string
@@ -22,7 +22,8 @@ const CustomUserForm: React.FC = () => {
   const [form, setForm] = useState<UserFormState>({ username: '', password: '', rol:null,passwordConfirm:''})
   const [roles, setRoles] = useState<Rol[]>([])
   const [loading, setLoading] = useState<boolean>(false)
-
+   const [topError, setTopError] = useState<string>('') 
+const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
   useEffect(() => {
     // cargar lista de roles para el select
     fetchRoles()
@@ -41,7 +42,11 @@ const CustomUserForm: React.FC = () => {
              rol:u.rol?.id?? null,
             passwordConfirm:'' })
         })
-        .catch(console.error)
+        .catch((err)=>{
+          const { message, fields } = toUiError(err)
+                setTopError(message)
+                if (fields) setFormErrors(fields) // { username: ['...'], password: ['...'] 
+        })
         .finally(() => setLoading(false))
     }
   }, [id, isEdit])
@@ -64,8 +69,8 @@ const CustomUserForm: React.FC = () => {
         await createUsuario(form)
       }
       navigate('/administrador/usuarios')
-    } catch (error) {
-      console.error('Error al guardar usuario', error)
+    } catch (err) {
+ console.log('ocurrio un error')
     }
   }
 
@@ -74,6 +79,13 @@ const CustomUserForm: React.FC = () => {
       <h2 className="text-2xl font-semibold mb-4">
         {isEdit?'EditarUsuario':'Crear Usuario'}
       </h2>
+      {topError && (
+        <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">
+          {topError}
+        </div>
+      )}
+
+
 
       {loading ? (
         <p>Cargando datos…</p>
