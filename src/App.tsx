@@ -37,7 +37,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* públicas */}
-          <Route path="/" element={<Welcome name="wolcome" />} />
+          <Route path="/" element={<Welcome />} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
 
 
