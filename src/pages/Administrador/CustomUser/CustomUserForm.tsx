@@ -23,7 +23,7 @@ const CustomUserForm: React.FC = () => {
   const [roles, setRoles] = useState<Rol[]>([])
   const [loading, setLoading] = useState<boolean>(false)
    const [topError, setTopError] = useState<string>('') 
-//const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
+const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
   useEffect(() => {
     // cargar lista de roles para el select
     fetchRoles()
