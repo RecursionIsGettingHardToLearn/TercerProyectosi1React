@@ -1,0 +1,13 @@
+@import "tailwindcss";
+/* Estilo por defecto para TODAS las tablas */
+table {
+  border-collapse: collapse;
+  border: 2px solid #333; /* grosor y color por defecto */
+  width: 100%;
+}
+
+table th,
+table td {
+  border: 2px solid #333; /* mismo grosor y color en celdas */
+  padding: 8px;
+}
