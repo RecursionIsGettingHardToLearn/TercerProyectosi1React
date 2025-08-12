@@ -2,28 +2,33 @@
 // src/pages/Admin/Users/CustomUserForm.tsx
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { fetchUsuario, createUsuario, updateUsuario, fetchRoles } from '../../../api/api'
-import type { CustomUser, Rol } from '../../../types'
+import { fetchRoles } from '../../../api/api'
+import { fetchUsuario, createUsuario, updateUsuario }
+  from '../../../types/user'
+
+import type { CustomUserResponse }
+  from '../../../types/user'
+
 import { toUiError } from '../../../api/error'
-interface UserFormDto {
-  username: string
-  password: string
-  rol:number| null;
-}interface UserFormState extends UserFormDto {
-  passwordConfirm: string
+import type { Rol } from '../../../types/index'
+
+interface UserFormState {
+  username: string;
+  password: string;
+  rol: number | null;
 }
 
 const CustomUserForm: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const isEdit = Boolean(id)
   const navigate = useNavigate()
-  
 
-  const [form, setForm] = useState<UserFormState>({ username: '', password: '', rol:null,passwordConfirm:''})
+
+  const [form, setForm] = useState<UserFormState>({ username: '', password: '', rol: null })
   const [roles, setRoles] = useState<Rol[]>([])
   const [loading, setLoading] = useState<boolean>(false)
-   const [topError, setTopError] = useState<string>('') 
-const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
+  const [topError, setTopError] = useState<string>('')
+  const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
   useEffect(() => {
     // cargar lista de roles para el select
     fetchRoles()
@@ -35,17 +40,17 @@ const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
     if (isEdit && id) {
       setLoading(true)
       fetchUsuario(+id)
-        .then((u: CustomUser) => {
-          setForm({ 
-             username:u.username,
-             password: '',
-             rol:u.rol?.id?? null,
-            passwordConfirm:'' })
+        .then((u: CustomUserResponse) => {
+          setForm({
+            username: u.username,
+            password: '',
+            rol: u.rol?.id ?? null,
+          })
         })
-        .catch((err)=>{
+        .catch((err) => {
           const { message, fields } = toUiError(err)
-                setTopError(message)
-                if (fields) setFormErrors(fields) // { username: ['...'], password: ['...'] 
+          setTopError(message)
+          if (fields) setFormErrors(fields) 
         })
         .finally(() => setLoading(false))
     }
@@ -59,27 +64,46 @@ const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
     }))
   }
 
+  // 1) catch del submit: setTopError / setFormErrors
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setTopError('')
     setFormErrors({})
     try {
       if (isEdit && id) {
-        // en edición, password vacía no se envía
-        await updateUsuario(+id, form)
+        // 2) construir payload sin campos extra ni password vacía
+        const payload: {
+          username: string;
+          rol: number | null;
+          password?: string
+        } = {
+          username: form.username,
+          rol: form.rol
+        }
+        if (form.password && form.password.trim().length > 0) {
+          payload.password = form.password
+        }
+        await updateUsuario(+id, payload)
       } else {
-        await createUsuario(form)
+        const payload = {
+          username: form.username,
+          password: form.password,
+          rol: form.rol
+        }
+        await createUsuario(payload)
       }
       navigate('/administrador/usuarios')
     } catch (err) {
- console.log('ocurrio un error')
+      const { message, fields } = toUiError(err)
+      setTopError(message)
+      if (fields) setFormErrors(fields)   // <- ahora sí se ven en el form
     }
   }
 
   return (
     <div >
       <h2 className="text-2xl font-semibold mb-4">
-        {isEdit?'EditarUsuario':'Crear Usuario'}
+        {isEdit ? 'EditarUsuario' : 'Crear Usuario'}
       </h2>
       {topError && (
         <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-red-700">
@@ -103,9 +127,9 @@ const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
               required
               className="w-full border px-2 py-1 rounded"
             />
-                {formErrors.username?.map((m, i) => (
-            <p key={i} className="text-xs text-red-600 mt-1">{m}</p>
-          ))}
+            {formErrors.username?.map((m, i) => (
+              <p key={i} className="text-xs text-red-600 mt-1">{m}</p>
+            ))}
           </div>
 
           <div>
@@ -118,17 +142,11 @@ const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
               className="w-full border px-2 py-1 rounded"
               required={!isEdit}
             />
-                {formErrors.password?.map((m, i) => (
-            <p key={i} className="text-xs text-red-600 mt-1">{m}</p>
-          ))}
+            {formErrors.password?.map((m, i) => (
+              <p key={i} className="text-xs text-red-600 mt-1">{m}</p>
+            ))}
           </div>
-          <div>
-            <label >Ingrese la contraseña nuevamente</label>
-            <input type="text"
-            name="passwordconfirm"
-            value={form.passwordConfirm} 
-            />
-          </div>
+
 
           <div>
             <label className="block mb-1">Rol</label>
@@ -143,6 +161,9 @@ const [formErrors, setFormErrors] = useState<Record<string, string[]>>({})
                 <option key={r.id} value={r.id}>{r.nombre}</option>
               ))}
             </select>
+            {formErrors.rol?.map((m, i) => (
+              <p key={i} className="text-xs text-red-600 mt-1">{m}</p>
+            ))}
           </div>
 
           <div className="flex space-x-2">

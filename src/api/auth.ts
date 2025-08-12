@@ -23,3 +23,8 @@ export function setEncabezado(token: string) {
 export async function logoutAPI(refresh: string): Promise<void> {
   await axiosInstance.post('/logout/', { refresh })
 }
+
+export async function refreshToken(refresh: string): Promise<string> {
+  const { data } = await axiosInstance.post<{ access: string }>('/token/refresh/', { refresh })
+  return data.access
+}

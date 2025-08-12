@@ -7,8 +7,8 @@ import type { Bitacora, DetalleBitacora } from '../../../types'
 const BitacoraDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [bitacora, setBitacora] = useState<Bitacora | null>(null)
-  const [detalles, setDetalles] = useState<DetalleBitacora[]>([])
+  const [bitacora, setBitacora] = useState<Bitacora | null>(null)//sesta son la sbitacoracs
+  const [detalles, setDetalles] = useState<DetalleBitacora[]>([])//esto son s etalled labcor
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -19,8 +19,9 @@ const BitacoraDetail: React.FC = () => {
           const b = await fetchBitacora(+id)
           const det = await fetchDetalleBitacoras()
           // Filtrar solo los detalles de esta bitácora:
+         
           setBitacora(b)
-          setDetalles(det.filter(d => d.bitacora.id === +id))
+          setDetalles(det.filter(detalle => detalle.bitacora === +id))
         }
       } catch (err) {
         console.error(err)

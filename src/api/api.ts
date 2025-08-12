@@ -1,10 +1,16 @@
 // src/api/api.ts
 import axios from '../app/axiosInstance'
+
 import type {
   Producto, Inventario, Rol, CustomUser,
   Venta, DetalleVenta, Pedido, DetallePedido,
-  Factura, Reporte, Bitacora, DetalleBitacora
+  Factura, Reporte, Bitacora, UpdateUserDto,DetalleBitacora,CreateUserDto
 } from '../types'
+
+
+export function createUsuario(dto: CreateUserDto) {
+  return axios.post('/usuarios/', dto)
+}
 
 /** 1. PRODUCTO */
 export interface ProductoDto {
@@ -92,12 +98,7 @@ export const deleteRol = async (id: number): Promise<void> => {
   await axios.delete(`/roles/${id}/`)
 }
 
-/** 4. USUARIO */
-export interface CustomUserDto {
-  username: string
-  password: string
-  rol?: number | null
-}
+
 export const fetchUsuarios = async (): Promise<CustomUser[]> => {
   const { data } = await axios.get<CustomUser[]>('/usuarios/')
   return data
@@ -106,15 +107,12 @@ export const fetchUsuario = async (id: number): Promise<CustomUser> => {
   const { data } = await axios.get<CustomUser>(`/usuarios/${id}/`)
   return data
 }
-export const createUsuario = async (u: CustomUserDto): Promise<CustomUser> => {
-  const { data } = await axios.post<CustomUser>('/usuarios/', u)
-  return data
-}
-export const updateUsuario = async (id: number, u: CustomUserDto): Promise<CustomUser> => {
+
+export const updateUsuario = async (id: number, u: UpdateUserDto): Promise<CustomUser> => {
   const { data } = await axios.put<CustomUser>(`/usuarios/${id}/`, u)
   return data
 }
-export const partialUpdateUsuario = async (id: number, patch: Partial<CustomUserDto>): Promise<CustomUser> => {
+export const partialUpdateUsuario = async (id: number, patch: Partial<UpdateUserDto>): Promise<CustomUser> => {
   const { data } = await axios.patch<CustomUser>(`/usuarios/${id}/`, patch)
   return data
 }

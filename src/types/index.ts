@@ -74,8 +74,19 @@ export  interface Bitacora {
 }
 export  interface DetalleBitacora {
   id: number;
-  bitacora: Bitacora;
+  bitacora: number;
   accion: string;
   fecha: string;
   tabla: string;
+}
+export type CreateUserDto = {
+  username: string
+  password: string
+  rol: number | null
+}
+
+export type UpdateUserDto = {
+  username?: string
+  password: string
+  rol?: number | null
 }

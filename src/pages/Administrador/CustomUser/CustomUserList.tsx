@@ -30,14 +30,14 @@ const CustomUserList: React.FC = () => {
   }
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('¿Eliminar este usuario?')) {
+   // if (window.confirm('¿Eliminar este usuario?')) {
       try {
         await deleteUsuario(id)
         loadUsers()
       } catch (error) {
         console.error('Error al eliminar usuario', error)
       }
-    }
+    //}
   }
 
   return (
