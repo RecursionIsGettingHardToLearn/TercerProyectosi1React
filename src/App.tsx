@@ -2,9 +2,10 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
-import  Login  from './pages/Login';
+import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import Forbidden from './pages/Forbidden';
+import Perfil from './pages/Perfil';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import AdministradorRoutes from './routes/AdministradorRoutes';
 import CajeroRoutes from './routes/CajeroRoutes';
@@ -82,6 +83,9 @@ function App() {
 
           {/* errores */}
           <Route path="/forbidden" element={<Forbidden />} />
+          <Route
+            path='/perfil' element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
         <ToastContainer position="bottom-right" autoClose={2000} />

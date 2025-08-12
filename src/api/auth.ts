@@ -24,7 +24,8 @@ export async function logoutAPI(refresh: string): Promise<void> {
   await axiosInstance.post('/logout/', { refresh })
 }
 
-export async function refreshToken(refresh: string): Promise<string> {
-  const { data } = await axiosInstance.post<{ access: string }>('/token/refresh/', { refresh })
-  return data.access
+export async function refreshAccess(refresh: string): Promise<Partial<TokenResponse>> {
+  // SimpleJWT devuelve {access} y si rotas, {access, refresh}
+  const { data } = await axiosInstance.post<Partial<TokenResponse>>('/token/refresh/', { refresh })
+  return data
 }

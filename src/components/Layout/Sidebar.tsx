@@ -60,6 +60,18 @@ const Sidebar: React.FC = () => {
         >
           Cerrar sesión
         </button>
+        <nav>
+
+        </nav>
+        <button
+          onClick={() => {
+            signout();
+            back('/perfil');
+          }}
+          className="m-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded"
+        >
+       Mi perfil
+        </button>
       </div>
     </>
   );

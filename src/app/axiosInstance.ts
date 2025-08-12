@@ -1,119 +1,99 @@
 // src/app/axiosInstance.ts
-import axios, { AxiosError, AxiosHeaders } from 'axios'
-import type { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios'
-import { refreshToken as apiRefreshToken } from '../api/auth'
+import axios, { AxiosError } from 'axios'
+import type{ AxiosRequestConfig } from 'axios'
+import { toast } from 'react-toastify'
+import { toUiError } from '../api/error'
 import { navigateTo } from './navigator'
 
-// Base instance
-const axiosInstance = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
-  withCredentials: true,
+// Usa .env si existe, y sino cae a tu URL local
+const baseURL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
+
+const api = axios.create({ baseURL })
+
+// —— Request: adjuntar access token ——
+api.interceptors.request.use((cfg) => {
+  const token = localStorage.getItem('access')
+  if (token && cfg.headers) cfg.headers.Authorization = `Bearer ${token}`
+  return cfg
 })
 
-// ====== Manejo de refresh con “cola” para evitar múltiples refresh en paralelo ======
+// —— Refresh simple anti-loop ——
 let isRefreshing = false
-let pendingQueue: Array<(token: string | null) => void> = []
-
-function processQueue(newToken: string | null) {
-  pendingQueue.forEach(cb => cb(newToken))
-  pendingQueue = []
+let pending: Array<(token: string | null) => void> = []
+const onRefreshed = (token: string | null) => {
+  pending.forEach(cb => cb(token))
+  pending = []
 }
 
-function setAuthHeader(token: string | null) {
-  if (token) {
-    axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`
-  } else {
-    delete axiosInstance.defaults.headers.common.Authorization
+async function tryRefreshToken(): Promise<string | null> {
+  if (isRefreshing) {
+    // Esperar a que termine el refresh en curso
+    return new Promise((resolve) => {
+      pending.push(resolve)
+    })
   }
-}
 
-// Util para garantizar AxiosHeaders sin chocar con tipos parciales
-function ensureAxiosHeaders(h?: unknown): AxiosHeaders {
-  if (h instanceof AxiosHeaders) return h
-  const headers = new AxiosHeaders()
-  if (h) headers.set(h as any) // mezcla llano/Raw en AxiosHeaders
-  return headers
-}
-
-// Request: pone Authorization si hay token en localStorage
-axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const access = localStorage.getItem('access')
-  if (access) {
-    const headers = ensureAxiosHeaders(config.headers)
-    headers.set('Authorization', `Bearer ${access}`)
-    config.headers = headers
-  }
-  return config
-})
-
-// Response: reintenta una sola vez tras refresh en 401
-axiosInstance.interceptors.response.use(
-  (res) => res,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as (AxiosRequestConfig & { _retry?: boolean })
-    const status = error.response?.status
-
-    // Si no es 401 o ya reintentamos, propaga el error
-    if (status !== 401 || originalRequest?._retry) {
-      throw error
-    }
-
-    // Marcamos para evitar loops infinitos
-    originalRequest._retry = true
-
+  isRefreshing = true
+  try {
     const refresh = localStorage.getItem('refresh')
-    if (!refresh) {
-      // No hay refresh → cerrar sesión
-      localStorage.removeItem('access')
-      localStorage.removeItem('refresh')
-      setAuthHeader(null)
-      navigateTo('/login', { replace: true })
-      throw error
-    }
+    if (!refresh) return null
 
-    // Si ya hay un refresh en curso, encolamos el reintento
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        pendingQueue.push((newToken) => {
-          if (!newToken) {
-            reject(error)
-            return
-          }
-          // Reintenta con el token nuevo
-          const headers = ensureAxiosHeaders(originalRequest.headers)
-          headers.set('Authorization', `Bearer ${newToken}`)
-          originalRequest.headers = headers
-          resolve(axiosInstance(originalRequest))
-        })
-      })
-    }
-
-    // Lanzamos refresh
-    isRefreshing = true
-    try {
-      const newAccess = await apiRefreshToken(refresh) // POST /token/refresh/
+    // Llama a tu endpoint de refresh; ajusta ruta si difiere
+    const { data } = await axios.post(`${baseURL}/token/refresh/`, { refresh })
+    const newAccess = data?.access
+    if (newAccess) {
       localStorage.setItem('access', newAccess)
-      setAuthHeader(newAccess)
-      processQueue(newAccess)
+      onRefreshed(newAccess)
+      return newAccess
+    }
+    return null
+  } catch {
+    onRefreshed(null)
+    return null
+  } finally {
+    isRefreshing = false
+  }
+}
 
-      // Reintenta la original con el nuevo token
-      const headers = ensureAxiosHeaders(originalRequest.headers)
-      headers.set('Authorization', `Bearer ${newAccess}`)
-      originalRequest.headers = headers
+// —— Response: manejo de errores + refresh ——
+api.interceptors.response.use(
+  (r) => r,
+  async (error: AxiosError) => {
+    const original = error.config as (AxiosRequestConfig & { _retry?: boolean })
+    const ui = toUiError(error)
+    const status = ui.status
 
-      return axiosInstance(originalRequest)
-    } catch (e) {
-      // Refresh falló → limpiar sesión y mandar a login
+    // 401: intentamos refresh 1 vez
+    if (status === 401 && !original?._retry) {
+      const newAccess = await tryRefreshToken()
+      if (newAccess) {
+        original._retry = true
+        original.headers = { ...(original.headers || {}), Authorization: `Bearer ${newAccess}` }
+        return api(original) // reintenta la petición original con token nuevo
+      }
+      // refresh falló → limpiar y llevar a login
       localStorage.removeItem('access')
       localStorage.removeItem('refresh')
-      setAuthHeader(null)
-      processQueue(null)
+      toast.info('Tu sesión expiró. Vuelve a iniciar sesión.')
       navigateTo('/login', { replace: true })
-      throw e
-    } finally {
-      isRefreshing = false
+      return Promise.reject(error)
     }
+
+    // 403, 404, 5xx → navegación/mensajes
+    if (status === 403) {
+      navigateTo('/forbidden', { replace: true })
+    } else if (status === 404) {
+      navigateTo('/not-found', { replace: true })
+    } else if (status && status >= 500) {
+      toast.error('Error del servidor. Intenta más tarde.')
+    } else if (ui.message) {
+      // Para cualquier otro error manejable (p.ej. validación)
+      // No tostees en formularios si los muestras inline; usa esto para pantallas no-form
+      // toast.error(ui.message)
+    }
+
+    return Promise.reject(error)
   }
 )
 
-export default axiosInstance
+export default api
