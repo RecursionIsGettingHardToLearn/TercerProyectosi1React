@@ -13,6 +13,7 @@ import ClienteRoutes from './routes/ClienteRoutes';
 import RepartidorRoutes from './routes/RepartidorRoutes';
 
 import Sidebar from './components/Layout/Sidebar';
+import ChangePassword from './pages/CambiarContras';
 import Welcome from './pages/welcom';
 import ProtectedRoute from './components/ProtectedRoute';
 import { CartProvider } from './contexts/CartContext';
@@ -84,11 +85,14 @@ function App() {
           {/* errores */}
           <Route path="/forbidden" element={<Forbidden />} />
           <Route
-            path='/perfil' element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
+            path='/perfil' element={<Perfil />} />
 
           <Route path="*" element={<NotFound />} />
+           <Route  path='/cambiar-contra'element={<ChangePassword/>}/>
         </Routes>
-        <ToastContainer position="bottom-right" autoClose={2000} />
+       
+
+        <ToastContainer position="top-right" autoClose={false} />
       </BrowserRouter>
     </AuthProvider>
   );

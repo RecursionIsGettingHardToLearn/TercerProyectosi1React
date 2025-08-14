@@ -27,9 +27,8 @@ const Sidebar: React.FC = () => {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 bg-red-800 text-white w-64 h-screen flex flex-col transform transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 bg-red-800 text-white w-64 h-screen flex flex-col transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="p-4 text-xl font-bold">Home</div>
         <nav className="flex-1 overflow-y-auto">
@@ -51,6 +50,10 @@ const Sidebar: React.FC = () => {
             </NavLink>
           ))}
         </nav>
+        <NavLink
+          to={'/perfil'}  className="block px-4 py-2 hover:bg-gray-700">
+          Perfil
+        </NavLink>
         <button
           onClick={() => {
             signout();
@@ -59,18 +62,6 @@ const Sidebar: React.FC = () => {
           className="m-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded"
         >
           Cerrar sesión
-        </button>
-        <nav>
-
-        </nav>
-        <button
-          onClick={() => {
-            signout();
-            back('/perfil');
-          }}
-          className="m-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded"
-        >
-       Mi perfil
         </button>
       </div>
     </>

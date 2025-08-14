@@ -39,3 +39,9 @@ npm install react-icons
 git add .
 git commit -m "Primer commit"
 git push -u origin main
+
+NSTRUCCIONES:
+1.leer todo los archivos .py
+
+cuando se hace un post a api/usuarios/ al crear un neuvo usuario teno el error
+Bad Request: /api/usuarios/ y registrar en logdeail lo que se esta haciendo
