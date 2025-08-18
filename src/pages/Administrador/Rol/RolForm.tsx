@@ -1,48 +1,83 @@
-
-// src/pages/Admin/Roles/RolesForm.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchRol, createRol, updateRol } from '../../../api/api';
-import type { Rol } from '../../../types';
+import axiosInstance from '../../../app/axiosInstance';
+import { toUiError } from '../../../api/error';
 
-interface RolFormDto {
-  nombre: string;
-}
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { roleSchema, type RoleForm } from '../../../schemas/role';
+
+type ApiRol = { id: number | string; nombre: string };
 
 const RolesForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const isEdit = Boolean(id);
+  const isEdit = useMemo(() => Boolean(id), [id]);
   const navigate = useNavigate();
 
-  const [form, setForm] = useState<RolFormDto>({ nombre: '' });
   const [loading, setLoading] = useState<boolean>(false);
+  const [topError, setTopError] = useState<string>(''); // error general
 
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting, isDirty },
+  } = useForm<RoleForm>({
+    resolver: zodResolver(roleSchema),
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
+    defaultValues: { nombre: '' },
+  });
+
+  // Cargar rol si es edición
   useEffect(() => {
-    if (isEdit && id) {
+    const loadRol = async () => {
+      if (!isEdit || !id) return;
       setLoading(true);
-      fetchRol(+id)
-        .then((r: Rol) => setForm({ nombre: r.nombre }))
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    }
-  }, [id, isEdit]);
+      try {
+        const { data } = await axiosInstance.get<ApiRol>(`/roles/${id}/`);
+        // Pre-cargamos el form
+        reset({ nombre: data?.nombre ?? '' });
+      } catch (_err) {
+        setTopError('No se pudo cargar el rol.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadRol();
+  }, [id, isEdit, reset]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    setForm({ nombre: value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (values: RoleForm) => {
+    setTopError('');
     try {
       if (isEdit && id) {
-        await updateRol(+id, form);
+        await axiosInstance.patch(`/roles/${id}/`, values, {
+          validateStatus: (s) => s >= 200 && s < 300,
+        });
       } else {
-        await createRol(form);
+        await axiosInstance.post(`/roles/`, values, {
+          validateStatus: (s) => s >= 200 && s < 300,
+        });
       }
       navigate('/administrador/roles');
     } catch (error) {
-      console.error('Error al guardar rol', error);
+      const ui = toUiError(error); // { message, fields?: Record<string,string[]> }
+      // error general
+      if (ui.message) setTopError(ui.message);
+
+      // errores por campo desde el backend → RHF
+      if (ui.fields) {
+        Object.entries(ui.fields).forEach(([field, msgs]) => {
+          const message = Array.isArray(msgs) ? msgs.join(' ') : String(msgs);
+          if (field in roleSchema.shape) {
+            setError(field as keyof RoleForm, { type: 'server', message });
+          } else {
+            // Si el backend envía un campo no mapeado, lo mostramos en topError
+            setTopError((prev) => prev ? `${prev} ${message}` : message);
+          }
+        });
+      }
     }
   };
 
@@ -52,28 +87,44 @@ const RolesForm: React.FC = () => {
         {isEdit ? 'Editar Rol' : 'Nuevo Rol'}
       </h2>
 
+      {topError && (
+        <div className="mb-3 p-2 rounded bg-red-100 text-red-700">{topError}</div>
+      )}
+
       {loading ? (
         <p>Cargando datos…</p>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 max-w-md">
           <div>
-            <label className="block mb-1">Nombre</label>
+            <label htmlFor="nombre" className="block mb-1">Nombre</label>
             <input
+              id="nombre"
               type="text"
-              name="nombre"
-              value={form.nombre}
-              onChange={handleChange}
-              required
+              {...register('nombre')}
+              maxLength={10} // ayuda de UX (el schema es la verdad)
+              aria-invalid={!!errors.nombre}
+              aria-describedby={errors.nombre ? 'nombre-err' : undefined}
               className="w-full border px-2 py-1 rounded"
+              onInput={(e) => {
+                // si quieres forzar recorte “en vivo”:
+                const target = e.currentTarget;
+                if (target.value.length > 10) target.value = target.value.slice(0, 10);
+              }}
             />
+            {errors.nombre && (
+              <p id="nombre-err" className="text-xs text-red-600 mt-1">
+                {errors.nombre.message}
+              </p>
+            )}
           </div>
 
           <div className="flex space-x-2">
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
             >
-              Guardar
+              {isSubmitting ? 'Guardando…' : 'Guardar'}
             </button>
             <button
               type="button"
@@ -83,6 +134,11 @@ const RolesForm: React.FC = () => {
               Cancelar
             </button>
           </div>
+
+          {/* Opcional: aviso al salir con cambios sin guardar */}
+          {isDirty && (
+            <p className="text-xs text-gray-500">Tienes cambios sin guardar.</p>
+          )}
         </form>
       )}
     </div>

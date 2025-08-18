@@ -1,3 +1,7 @@
+
+
+
+
 // src/pages/Admin/Roles/RolesList.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -30,14 +34,14 @@ const RolesList: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('¿Eliminar este rol?')) {
+    
       try {
         await deleteRol(id);
         loadRoles();
       } catch (error) {
         console.error('Error al eliminar rol', error);
       }
-    }
+    
   };
 
   return (
@@ -58,6 +62,7 @@ const RolesList: React.FC = () => {
         <table className="min-w-full bg-white border">
           <thead>
             <tr>
+              <th className="px-4 py-2 border">id</th>
               <th className="px-4 py-2 border">Nombre</th>
               <th className="px-4 py-2 border">Acciones</th>
             </tr>
@@ -65,6 +70,7 @@ const RolesList: React.FC = () => {
           <tbody>
             {roles.map((rol) => (
               <tr key={rol.id}>
+                <td className="px-4 py-2 border">{rol.id}</td>
                 <td className="px-4 py-2 border">{rol.nombre}</td>
                 <td className="px-4 py-2 border">
                   <button

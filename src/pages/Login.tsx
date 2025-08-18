@@ -1,3 +1,5 @@
+
+
 // src/pages/Login.tsx
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -5,7 +7,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { toUiError } from '../api/error'
 
 const Login: React.FC = () => {
-  const { signin, user, signout } = useAuth()
+  const { signin, user,
+     signout } = useAuth()
   const navigate = useNavigate()
 
   const [username, setUsername] = useState('')
@@ -50,7 +53,7 @@ const Login: React.FC = () => {
           <input
             value={username}
             onChange={e => setUsername(e.target.value)}
-            className="border rounded w-full p-2"
+           
           />
           {formErrors.username?.map((m, i) => (
             <p key={i} className="text-xs text-red-600 mt-1">{m}</p>

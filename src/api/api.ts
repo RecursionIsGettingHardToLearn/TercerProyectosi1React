@@ -279,6 +279,7 @@ export const partialUpdateFactura = async (id: number, patch: Partial<FacturaDto
   const { data } = await axios.patch<Factura>(`/facturas/${id}/`, patch)
   return data
 }
+
 export const deleteFactura = async (id: number): Promise<void> => {
   await axios.delete(`/facturas/${id}/`)
 }

@@ -5,12 +5,11 @@ import { toast } from 'react-toastify'
 import { toUiError } from '../api/error'
 import { navigateTo } from './navigator'
 
-// Usa .env si existe, y sino cae a tu URL local
-const baseURL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
+const baseURL = import.meta.env.VITE_API_aURL || 'http://127.0.0.1:8000/api'
 
 const api = axios.create({ baseURL })
 
-// —— Request: adjuntar access token ——
+// —— Request: adjuntar access token ——a
 api.interceptors.request.use((cfg) => {
   const token = localStorage.getItem('access')
   if (token && cfg.headers) cfg.headers.Authorization = `Bearer ${token}`
@@ -29,17 +28,24 @@ async function tryRefreshToken(): Promise<string | null> {
   if (isRefreshing) {
     return new Promise((resolve) => { pending.push(resolve) })
   }
-
   isRefreshing = true
   try {
     const refresh = localStorage.getItem('refresh')
     if (!refresh) return null
 
-    // ¡Usa axios base (sin interceptores) para evitar loops!
-    const { data } = await axios.post(`${baseURL}/token/refresh/`, { refresh })
-    const newAccess = data?.access
+    // Usa axios "crudo" (sin interceptores) para evitar loops
+    const { data } = await axios.post(`${baseURL}/token/refresh/`, { refresh }, {
+      validateStatus: s => s >= 200 && s < 300
+    })
+
+    const newAccess: string | undefined  = data?.access
+    const newRefresh: string | undefined = data?.refresh   // <-- si ROTATE_REFRESH_TOKENS=True, vendrá
+
     if (newAccess) {
       localStorage.setItem('access', newAccess)
+      if (newRefresh) {
+        localStorage.setItem('refresh', newRefresh)        // <-- guarda el refresh rotado
+      }
       onRefreshed(newAccess)
       return newAccess
     }
